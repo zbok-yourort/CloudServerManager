@@ -1,0 +1,231 @@
+--- console/js/app.js
++++ console/js/app.js
+@@ -35,76 +35,116 @@
+ const LoginPage = {
+   template: `
+     <div class="login-page">
+-      <div class="login-container">
+-        <div class="login-header">
+-          <h1>CloudServerManager</h1>
+-          <p>登录到您的账户</p>
+-        </div>
+-
+-        <form @submit.prevent="handleLogin" class="login-form">
+-          <div class="form-group">
+-            <label class="form-label">邮箱</label>
+-            <input
+-              type="email"
+-              class="form-input"
+-              v-model="email"
+-              placeholder="请输入邮箱"
+-              required
+-            >
+-          </div>
+-
+-          <div class="form-group">
+-            <label class="form-label">密码</label>
+-            <input
+-              type="password"
+-              class="form-input"
+-              v-model="password"
+-              placeholder="请输入密码"
+-              required
+-            >
+-          </div>
+-
+-          <div class="form-actions">
+-            <router-link to="/forgot" class="forgot-link">忘记密码？</router-link>
+-          </div>
+-
+-          <div v-if="error" class="error-message">{{ error }}</div>
+-
+-          <button type="submit" class="btn btn-primary btn-block" :disabled="loading">
+-            {{ loading ? '登录中...' : '登录' }}
+-          </button>
+-        </form>
+-
+-        <div class="divider">
+-          <span>或其他方式登录</span>
+-        </div>
+-
+-        <div class="oauth-buttons">
+-          <button class="oauth-btn passkey" @click="handlePasskey" :disabled="loading">
+-            <span class="oauth-icon">🔐</span>
+-            <span>Passkey</span>
+-          </button>
+-          <button class="oauth-btn wechat" @click="handleWechat" :disabled="loading">
+-            <span class="oauth-icon">💬</span>
+-            <span>微信</span>
+-          </button>
+-          <button class="oauth-btn feishu" @click="handleFeishu" :disabled="loading">
+-            <span class="oauth-icon">✈️</span>
+-            <span>飞书</span>
+-          </button>
+-        </div>
+-
+-        <div class="login-footer">
+-          <span>没有账户？</span>
+-          <router-link to="/register" class="register-link">立即注册</router-link>
++      <div class="login-split-layout">
++        <div class="login-left">
++          <div class="brand-title">STime Cloud 樱时云</div>
++        </div>
++        
++        <div class="login-right">
++          <div class="login-panel">
++            <div class="login-tabs">
++              <div class="tab" :class="{ active: loginType === 'account' }" @click="loginType = 'account'">账密登录</div>
++              <div class="tab" :class="{ active: loginType === 'phone' }" @click="loginType = 'phone'">手机登录</div>
++            </div>
++
++            <!-- 账号密码登录 -->
++            <form v-if="loginType === 'account'" @submit.prevent="handleLogin" class="login-form">
++              <div class="input-with-icon">
++                <span class="input-icon">👤</span>
++                <input
++                  type="text"
++                  class="form-input icon-pl"
++                  v-model="email"
++                  placeholder="请输入用户名/邮箱/手机号"
++                  required
++                >
++              </div>
++
++              <div class="input-with-icon mt-16">
++                <span class="input-icon">🔒</span>
++                <input
++                  type="password"
++                  class="form-input icon-pl"
++                  v-model="password"
++                  placeholder="请输入密码"
++                  required
++                >
++              </div>
++
++              <div v-if="error" class="error-message mt-16">{{ error }}</div>
++
++              <div class="form-actions-row mt-16">
++                <button type="submit" class="btn-blue login-btn" :disabled="loading">登录</button>
++                <button type="button" class="btn-red forgot-btn" @click="$router.push('/forgot')" :disabled="loading">忘记密码</button>
++              </div>
++              
++              <button type="button" class="btn-dark register-btn mt-12" @click="$router.push('/register')" :disabled="loading">
++                没有账号？点击注册
++              </button>
++            </form>
++            
++            <!-- 手机号登录 -->
++            <form v-else @submit.prevent="handlePhoneLogin" class="login-form">
++              <div class="input-with-icon">
++                <span class="input-icon">📱</span>
++                <input
++                  type="tel"
++                  class="form-input icon-pl"
++                  v-model="phone"
++                  placeholder="请输入手机号"
++                  required
++                >
++              </div>
++
++              <div class="sms-input-group mt-16">
++                <div class="input-with-icon" style="flex:1;">
++                  <span class="input-icon">✉️</span>
++                  <input
++                    type="text"
++                    class="form-input icon-pl"
++                    v-model="code"
++                    placeholder="请输入验证码"
++                    maxlength="6"
++                    required
++                  >
++                </div>
++                <button type="button" class="btn-gray sms-btn" @click="sendSms" :disabled="countdown > 0 || sending">
++                  {{ countdown > 0 ? countdown + 's' : '获取验证码' }}
++                </button>
++              </div>
++
++              <div v-if="error" class="error-message mt-16">{{ error }}</div>
++
++              <button type="submit" class="btn-blue login-btn mt-16" style="width: 100%;" :disabled="loading">
++                {{ loading ? '登录中...' : '登录' }}
++              </button>
++            </form>
++
++            <div class="divider">
++              <span>或使用</span>
++            </div>
++
++            <div class="oauth-buttons-column">
++              <button type="button" class="oauth-btn-wide btn-gray" @click="handlePasskey" :disabled="loading">
++                <span class="oauth-icon">🛡️</span> 通行密钥 (Passkey)
++              </button>
++              <button type="button" class="oauth-btn-wide btn-green mt-12" @click="handleWechat" :disabled="loading">
++                <span class="oauth-icon">💬</span> 微信一键登录/注册
++              </button>
++              <button type="button" class="oauth-btn-wide btn-blue-light mt-12" @click="handleFeishu" :disabled="loading">
++                <span class="oauth-icon">✈️</span> 飞书登录
++              </button>
++            </div>
++          </div>
++          
++          <div class="login-footer-copy">
++            ©Copyright 2026-2027 ***公司版权所有。
++          </div>
+         </div>
+       </div>
+     </div>
+   `,
+   data() {
+     return {
++      loginType: 'account',
+       email: '',
+       password: '',
++      phone: '',
++      code: '',
+       error: '',
+-      loading: false
++      loading: false,
++      sending: false,
++      countdown: 0
+     }
+   },
+   methods: {
+@@ -126,6 +166,42 @@
+       }
+     },
++    async sendSms() {
++      if (!/^1[3-9]\d{9}$/.test(this.phone)) {
++        this.error = '请输入正确的手机号';
++        return;
++      }
++      this.error = '';
++      this.sending = true;
++      try {
++        await api.sendSmsCode(this.phone);
++        this.countdown = 60;
++        const timer = setInterval(() => {
++          this.countdown--;
++          if (this.countdown <= 0) clearInterval(timer);
++        }, 1000);
++      } catch (err) {
++        this.error = err.message;
++      } finally {
++        this.sending = false;
++      }
++    },
++    async handlePhoneLogin() {
++      this.error = '';
++      this.loading = true;
++      try {
++        await api.verifySmsCode(this.phone, this.code);
++        const redirect = this.$route.query.redirect || '/';
++        this.$router.push(redirect);
++      } catch (err) {
++        this.error = err.message;
++      } finally {
++        this.loading = false;
++      }
++    },
+     handlePasskey() {
+       alert('Passkey 登录功能预留');
+     },
