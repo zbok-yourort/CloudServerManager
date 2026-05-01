@@ -20,5 +20,13 @@ module.exports = {
     privateKey: process.env.ALIPAY_PRIVATE_KEY || '',
     alipayPublicKey: process.env.ALIPAY_PUBLIC_KEY || '',
     notifyUrl: process.env.ALIPAY_NOTIFY_URL || 'http://localhost:3000/api/pay/alipay/callback'
+  },
+  aliyunSms: {
+    accessKeyId: process.env.ALIBABA_CLOUD_ACCESS_KEY_ID || '',
+    accessKeySecret: process.env.ALIBABA_CLOUD_ACCESS_KEY_SECRET || '',
+    signName: process.env.SMS_SIGN_NAME || '速通互联验证码',
+    templateCode: process.env.SMS_TEMPLATE_CODE || '100001',
+    codeLength: parseInt(process.env.SMS_CODE_LENGTH, 10) || 6,
+    validTime: parseInt(process.env.SMS_VALID_TIME, 10) || 300,
   }
 };
