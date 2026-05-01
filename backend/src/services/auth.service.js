@@ -1,9 +1,9 @@
 const prisma = require('../db/prisma');
 const { hashPassword } = require('../utils/crypto');
 const { generateAccessToken, generateRefreshToken } = require('../utils/jwt');
+const { sendSmsVerifyCode, checkSmsVerifyCode } = require('../utils/sms');
 
 // In-memory stores (replace with Redis in production)
-const smsCodeStore = new Map(); // phone -> { code, expiresAt }
 const tokenBlacklist = new Set(); // blacklisted accessTokens
 const resetTokenStore = new Map(); // token -> { userId, expiresAt }
 
@@ -104,37 +104,16 @@ class AuthService {
   }
 
   async sendSmsCode(phone) {
-    // Generate 6-digit code
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    const expiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes
-
-    smsCodeStore.set(phone, { code, expiresAt });
-
-    // In production, integrate with SMS provider (e.g., Twilio, Alibaba Cloud)
-    console.log(`[SMS] Mock send to ${phone}: code=${code}`);
-
-    return { message: '验证码已发送' };
+    return await sendSmsVerifyCode(phone);
   }
 
   async verifySmsCode(phone, code) {
-    const record = smsCodeStore.get(phone);
-
-    if (!record) {
-      throw new Error('请先获取验证码');
+    const passed = await checkSmsVerifyCode(phone, code);
+    if (!passed) {
+      throw new Error('验证码错误或已过期');
     }
 
-    if (Date.now() > record.expiresAt) {
-      smsCodeStore.delete(phone);
-      throw new Error('验证码已过期');
-    }
-
-    if (record.code !== code) {
-      throw new Error('验证码错误');
-    }
-
-    smsCodeStore.delete(phone); // One-time use
-
-    // Find or create user by phone
+    // Find user by phone
     let user = await prisma.user.findFirst({ where: { phone } });
 
     if (!user) {
@@ -209,23 +188,11 @@ class AuthService {
   }
 
   async phoneRegister(phone, code) {
-    // Verify SMS code first
-    const record = smsCodeStore.get(phone);
-
-    if (!record) {
-      throw new Error('请先获取验证码');
+    // Verify SMS code via Alibaba Cloud
+    const passed = await checkSmsVerifyCode(phone, code);
+    if (!passed) {
+      throw new Error('验证码错误或已过期');
     }
-
-    if (Date.now() > record.expiresAt) {
-      smsCodeStore.delete(phone);
-      throw new Error('验证码已过期');
-    }
-
-    if (record.code !== code) {
-      throw new Error('验证码错误');
-    }
-
-    smsCodeStore.delete(phone);
 
     // Check if phone already registered
     const existingUser = await prisma.user.findFirst({ where: { phone } });

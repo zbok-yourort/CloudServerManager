@@ -12,6 +12,9 @@
     "db:seed": "node src/db/seed.js"
   },
   "dependencies": {
+    "@alicloud/dypnsapi20170525": "^2.0.0",
+    "@alicloud/openapi-client": "^0.4.15",
+    "@alicloud/tea-util": "^1.4.11",
     "@prisma/client": "^5.10.0",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
